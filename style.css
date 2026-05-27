@@ -856,5 +856,14 @@ body.hovered .custom-cursor-dot {
         width: 100%;
         padding: 12px 24px;
     }
+
+    .noise-overlay {
+        display: none !important;
+    }
+
+    .logo::before, .logo::after {
+        display: none !important;
+        animation: none !important;
+    }
 }
 

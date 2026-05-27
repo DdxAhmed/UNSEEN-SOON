@@ -2,11 +2,13 @@
 // UNSEEN STORE - Dynamic Animations & Logic
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    
+    // Check if the device is a mobile or touch device
+    const isMobile = window.innerWidth <= 600 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
     // === 1. Dynamic Particles Background ===
     const particlesContainer = document.getElementById('particles-container');
-    const particleCount = 45;
+    // Reduce particle count to only 6 on mobile for major performance improvement, 45 on desktop
+    const particleCount = isMobile ? 6 : 45;
 
     for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
@@ -38,154 +40,156 @@ document.addEventListener('DOMContentLoaded', () => {
         particlesContainer.appendChild(particle);
     }
 
-    // Inject float keyframe style dynamically
-    const styleSheet = document.createElement('style');
-    styleSheet.innerHTML = `
-        @keyframes floatUp {
-            0% {
-                transform: translateY(0) scale(1);
-                opacity: 0;
+    // Inject float keyframe style dynamically (only if particles exist)
+    if (particleCount > 0) {
+        const styleSheet = document.createElement('style');
+        styleSheet.innerHTML = `
+            @keyframes floatUp {
+                0% {
+                    transform: translateY(0) scale(1);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 0.5;
+                }
+                90% {
+                    opacity: 0.5;
+                }
+                100% {
+                    transform: translateY(-100px) scale(0.8);
+                    opacity: 0;
+                }
             }
-            10% {
-                opacity: 0.5;
-            }
-            90% {
-                opacity: 0.5;
-            }
-            100% {
-                transform: translateY(-100px) scale(0.8);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(styleSheet);
-
-
-    // === 2. Premium Custom Cursor ===
-    const cursor = document.querySelector('.custom-cursor');
-    const cursorDot = document.querySelector('.custom-cursor-dot');
-    let mouseX = 0, mouseY = 0;
-    let cursorX = 0, cursorY = 0;
-    let dotX = 0, dotY = 0;
-
-    document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        
-        // Ambient Background Glow Mouse Parallax
-        const x = e.clientX / window.innerWidth - 0.5;
-        const y = e.clientY / window.innerHeight - 0.5;
-        const glow1 = document.querySelector('.bg-glow-1');
-        const glow2 = document.querySelector('.bg-glow-2');
-        if (glow1) glow1.style.transform = `translate(${x * 60}px, ${y * 60}px) scale(1.05)`;
-        if (glow2) glow2.style.transform = `translate(${x * -40}px, ${y * -40}px) scale(1.05)`;
-    });
-
-    // Lerp (Linear Interpolation) for smooth lagging effect
-    function animateCursor() {
-        // Smooth cursor border delay
-        cursorX += (mouseX - cursorX) * 0.12;
-        cursorY += (mouseY - cursorY) * 0.12;
-        cursor.style.left = `${cursorX}px`;
-        cursor.style.top = `${cursorY}px`;
-
-        // Tiny delay for the dot itself (very subtle)
-        dotX += (mouseX - dotX) * 0.25;
-        dotY += (mouseY - dotY) * 0.25;
-        cursorDot.style.left = `${dotX}px`;
-        cursorDot.style.top = `${dotY}px`;
-
-        requestAnimationFrame(animateCursor);
+        `;
+        document.head.appendChild(styleSheet);
     }
-    animateCursor();
 
-    // Hover effect class additions
-    const interactables = document.querySelectorAll('a, button, input, .tilt-target');
-    interactables.forEach(item => {
-        item.addEventListener('mouseenter', () => {
-            document.body.classList.add('hovered');
+    // Only run mouse interactive visuals on desktop to save mobile CPU/GPU
+    if (!isMobile) {
+        // === 2. Premium Custom Cursor ===
+        const cursor = document.querySelector('.custom-cursor');
+        const cursorDot = document.querySelector('.custom-cursor-dot');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+        let dotX = 0, dotY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            // Ambient Background Glow Mouse Parallax
+            const x = e.clientX / window.innerWidth - 0.5;
+            const y = e.clientY / window.innerHeight - 0.5;
+            const glow1 = document.querySelector('.bg-glow-1');
+            const glow2 = document.querySelector('.bg-glow-2');
+            if (glow1) glow1.style.transform = `translate3d(${x * 60}px, ${y * 60}px, 0) scale(1.05)`;
+            if (glow2) glow2.style.transform = `translate3d(${x * -40}px, ${y * -40}px, 0) scale(1.05)`;
         });
-        item.addEventListener('mouseleave', () => {
-            document.body.classList.remove('hovered');
-        });
-    });
 
-
-    // === 3. 3D Card Tilt Interaction ===
-    const tiltTargets = document.querySelectorAll('.tilt-target');
-
-    tiltTargets.forEach(target => {
-        target.addEventListener('mousemove', (e) => {
-            const rect = target.getBoundingClientRect();
-            
-            // Mouse coordinate relative to the element (from -1 to 1)
-            const x = (e.clientX - rect.left) / rect.width - 0.5;
-            const y = (e.clientY - rect.top) / rect.height - 0.5;
-            
-            // Rotate intensity (max 8 degrees)
-            const rotateX = -y * 8;
-            const rotateY = x * 8;
-
-            target.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-            
-            // Subtle offset glow positioning (if target has a card-glow overlay)
-            const glow = target.querySelector('.card-glow');
-            if (glow) {
-                const glowX = (e.clientX - rect.left) / rect.width * 100;
-                const glowY = (e.clientY - rect.top) / rect.height * 100;
-                glow.style.background = `radial-gradient(circle at ${glowX}% ${glowY}%, rgba(201, 164, 92, 0.12) 0%, transparent 60%)`;
+        // Lerp (Linear Interpolation) for smooth lagging effect
+        function animateCursor() {
+            // Smooth cursor border delay
+            cursorX += (mouseX - cursorX) * 0.12;
+            cursorY += (mouseY - cursorY) * 0.12;
+            if (cursor) {
+                cursor.style.left = `${cursorX}px`;
+                cursor.style.top = `${cursorY}px`;
             }
-        });
 
-        target.addEventListener('mouseleave', () => {
-            target.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-            const glow = target.querySelector('.card-glow');
-            if (glow) {
-                glow.style.background = 'transparent';
+            // Tiny delay for the dot itself (very subtle)
+            dotX += (mouseX - dotX) * 0.25;
+            dotY += (mouseY - dotY) * 0.25;
+            if (cursorDot) {
+                cursorDot.style.left = `${dotX}px`;
+                cursorDot.style.top = `${dotY}px`;
             }
-        });
-    });
 
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
 
-    // === 4. Magnetic Micro-interactions ===
-    const magneticItems = document.querySelectorAll('.magnetic-target');
-
-    magneticItems.forEach(item => {
-        item.addEventListener('mousemove', (e) => {
-            const rect = item.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
-
-            // Pull element slightly towards the mouse (max 12px)
-            item.style.transform = `translate(${x * 0.25}px, ${y * 0.25}px)`;
-        });
-
-        item.style.transition = 'transform 0.3s ease';
-
-        item.addEventListener('mouseleave', () => {
-            item.style.transform = 'translate(0px, 0px)';
-        });
-    });
-
-
-    // === 5. Interactive 3D Carousel Rotation ===
-    const carouselScene = document.querySelector('.carousel-3d-scene');
-    const carouselTrack = document.querySelector('.carousel-3d-track');
-    
-    if (carouselScene && carouselTrack) {
-        carouselScene.addEventListener('mousemove', (e) => {
-            const rect = carouselScene.getBoundingClientRect();
-            // Calculate horizontal offset from center (-0.5 to 0.5)
-            const x = (e.clientX - rect.left) / rect.width - 0.5;
-            
-            // Map offset to rotation angle (-120 to 120 degrees)
-            const rotateYOffset = x * -240; 
-            carouselTrack.style.transform = `rotateY(${rotateYOffset}deg)`;
+        // Hover effect class additions
+        const interactables = document.querySelectorAll('a, button, input, .tilt-target');
+        interactables.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                document.body.classList.add('hovered');
+            });
+            item.addEventListener('mouseleave', () => {
+                document.body.classList.remove('hovered');
+            });
         });
 
-        carouselScene.addEventListener('mouseleave', () => {
-            carouselTrack.style.transform = '';
+        // === 3. 3D Card Tilt Interaction ===
+        const tiltTargets = document.querySelectorAll('.tilt-target');
+
+        tiltTargets.forEach(target => {
+            target.addEventListener('mousemove', (e) => {
+                const rect = target.getBoundingClientRect();
+                
+                // Mouse coordinate relative to the element (from -1 to 1)
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                
+                // Rotate intensity (max 8 degrees)
+                const rotateX = -y * 8;
+                const rotateY = x * 8;
+
+                target.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                
+                // Subtle offset glow positioning (if target has a card-glow overlay)
+                const glow = target.querySelector('.card-glow');
+                if (glow) {
+                    const glowX = (e.clientX - rect.left) / rect.width * 100;
+                    const glowY = (e.clientY - rect.top) / rect.height * 100;
+                    glow.style.background = `radial-gradient(circle at ${glowX}% ${glowY}%, rgba(201, 164, 92, 0.12) 0%, transparent 60%)`;
+                }
+            });
+
+            target.addEventListener('mouseleave', () => {
+                target.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+                const glow = target.querySelector('.card-glow');
+                if (glow) {
+                    glow.style.background = 'transparent';
+                }
+            });
         });
+
+        // === 4. Magnetic Micro-interactions ===
+        const magneticItems = document.querySelectorAll('.magnetic-target');
+
+        magneticItems.forEach(item => {
+            item.addEventListener('mousemove', (e) => {
+                const rect = item.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                // Pull element slightly towards the mouse (max 12px)
+                item.style.transform = `translate3d(${x * 0.25}px, ${y * 0.25}px, 0)`;
+            });
+
+            item.style.transition = 'transform 0.3s ease';
+
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translate3d(0, 0, 0)';
+            });
+        });
+
+        // === 5. Interactive 3D Carousel Rotation ===
+        const carouselScene = document.querySelector('.carousel-3d-scene');
+        const carouselTrack = document.querySelector('.carousel-3d-track');
+        
+        if (carouselScene && carouselTrack) {
+            carouselScene.addEventListener('mousemove', (e) => {
+                const rect = carouselScene.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const rotateYOffset = x * -240; 
+                carouselTrack.style.transform = `rotateY(${rotateYOffset}deg)`;
+            });
+
+            carouselScene.addEventListener('mouseleave', () => {
+                carouselTrack.style.transform = '';
+            });
+        }
     }
 
 
